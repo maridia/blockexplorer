@@ -1,36 +1,101 @@
-import { Alchemy, Network } from 'alchemy-sdk';
-import { useEffect, useState } from 'react';
+import { useEffect, useState } from "react";
+import {
+  BrowserRouter as Router,
+  Switch,
+  Route,
+  useParams,
+} from "react-router-dom";
+import alchemy from "./alchemy.js";
+import Navbar from "./components/Navbar.jsx";
+import RecentBlocks from "./components/RecentBlocks.jsx";
+import SearchBar from "./components/SearchBar.jsx";
 
-import './App.css';
-
-// Refer to the README doc for more information about using API
-// keys in client-side code. You should never do this in production
-// level code.
-const settings = {
-  apiKey: process.env.REACT_APP_ALCHEMY_API_KEY,
-  network: Network.ETH_MAINNET,
-};
-
-
-// In this week's lessons we used ethers.js. Here we are using the
-// Alchemy SDK is an umbrella library with several different packages.
-//
-// You can read more about the packages here:
-//   https://docs.alchemy.com/reference/alchemy-sdk-api-surface-overview#api-surface
-const alchemy = new Alchemy(settings);
+import "./App.css";
+import BlockDetails from "./components/BlockDetails.jsx";
+import LatestTransactions from "./components/LatestTransactions.jsx";
+import TransactionDetails from "./components/TransactionDetails.jsx";
+import BlockTransactions from "./components/BlockTransactions.jsx";
+import AddressTxnHistory from "./components/AddressTxnHistory.jsx";
+import Retry from "./components/Retry.jsx";
 
 function App() {
-  const [blockNumber, setBlockNumber] = useState();
+  const [blocks, setBlocks] = useState([]);
+  const [latestBlock, setLatestBlock] = useState();
 
   useEffect(() => {
-    async function getBlockNumber() {
-      setBlockNumber(await alchemy.core.getBlockNumber());
+    async function getBlocks() {
+      const latestBlockNumber = await alchemy.core.getBlockNumber();
+      setLatestBlock(latestBlockNumber);
+      const blockPromises = [];
+
+      for (let i = 0; i < 5; i++) {
+        blockPromises.push(latestBlockNumber - i);
+      }
+
+      const blocks = await Promise.all(blockPromises);
+      const blockTimestamps = await Promise.all(
+        blockPromises.map(async (blockNumber) => {
+          const block = await alchemy.core.getBlock(blockNumber);
+          return block.timestamp;
+        })
+      );
+
+      const blocksData = blockTimestamps.map((timestamp, index) => ({
+        blockNumber: blocks[index],
+        timestamp,
+      }));
+
+      setBlocks(blocksData);
     }
 
-    getBlockNumber();
-  });
+    getBlocks();
+  }, []);
 
-  return <div className="App">Block Number: {blockNumber}</div>;
+  return (
+    <Router>
+      <div>
+        <div className="flex flex-row">
+          <Navbar />
+        </div>
+        <Switch>
+          <Route exact path="/">
+            <div className="pt-14 flex justify-center">
+              <SearchBar latestBlock={latestBlock} />
+            </div>
+            <div className="flex flex-row w-full px-10 py-14">
+              <div className="basis-1/2 pr-2">
+                <RecentBlocks blocks={blocks} />
+              </div>
+              <div className="basis-1/2 pl-2">
+                <LatestTransactions blocks={blocks} />
+              </div>
+            </div>
+          </Route>
+          <Route path="/block/:blockNumber">
+            <div>
+              <BlockDetails />
+            </div>
+          </Route>
+          <Route path="/address/:address">
+            <div>
+              <AddressTxnHistory />
+            </div>
+          </Route>
+          <Route path="/transaction-details/:blockNumber">
+            <div>
+              <BlockTransactions />
+            </div>
+          </Route>
+          <Route path="/transaction/:transactionHash">
+            <TransactionDetails />
+          </Route>
+          <Route path="/404">
+            <Retry />
+          </Route>
+        </Switch>
+      </div>
+    </Router>
+  );
 }
 
 export default App;
