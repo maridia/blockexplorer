@@ -1,10 +1,7 @@
-import shortConvertTimestamp from '../utils/shortConvertTimestamp';
 import alchemy from '../alchemy';
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Switch, Route, useParams } from 'react-router-dom';
+import {useParams } from 'react-router-dom';
 import { Link } from 'react-router-dom/cjs/react-router-dom.min';
-import Retry from './Retry';
-import { Utils } from 'alchemy-sdk';
 
 function AddressTxnHistory() {
     const { address } = useParams();

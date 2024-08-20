@@ -1,10 +1,5 @@
 import { useEffect, useState } from "react";
-import {
-  BrowserRouter as Router,
-  Switch,
-  Route,
-  useParams,
-} from "react-router-dom";
+import { BrowserRouter as Router, Switch, Route } from "react-router-dom";
 import alchemy from "./alchemy.js";
 import Navbar from "./components/Navbar.jsx";
 import RecentBlocks from "./components/RecentBlocks.jsx";
